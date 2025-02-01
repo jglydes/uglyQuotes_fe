@@ -4,7 +4,7 @@ const LanguageSelector = ({setLanguage}) => {
   return (
     <div>
       <select
-        className="bg-gray-800 text-white px-4 py-2 rounded-lg"
+        className="bg-[#1b6c9b] text-white px-4 py-2 rounded-lg"
         onChange={(e) => {
           console.log(`Language changed to: ${e.target.value}`)
           setLanguage(e.target.value)
