@@ -2,11 +2,23 @@ import React, { useState, useEffect } from "react";
 import QuoteBox from "./components/QuoteBox";
 import Footer from "./components/Footer"
 import LanguageSelector from "./components/LanguageSelector";
-import { motion } from "framer-motion";
+import QuoteSkeleton from "./components/QuoteSkeleton";
+import { motion, AnimatePresence } from "framer-motion";
 import { generateImage } from "./utils/generateImage";
 import axios from "axios";
 
+const initialQuotes = [
+  "Life is like a roll of toilet paper, sometimes it's just full of crap.",
+  "If life gives you lemons, just squirt them back in life's eye and make a margarita.",
+  "I'm not lazy, I'm just in energy-saving mode for the important stuff in life, like naps and snacks.",
+  "Life is like a box of chocolates, half the time you don't know what you're gonna get, and the other half is filled with calories.",
+  "I'm not arguing, I'm just explaining why I'm right about everything in life.",
+  'Life is short, so smile while you still have teeth, and laugh until you snort.'
+]
+
+
 const App = () => {
+  const numberOfQuotesToDisplay = 6
   const [quotes, setQuotes] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [language, setLanguage] = useState("english");
@@ -17,38 +29,74 @@ const App = () => {
   const [selectedFontColor, setSelectedFontColor] = useState("#1f2937")
   const [selectedBgColor, setSelectedBgColor] = useState("#f3f4f6")
 
+  const [allQuotes, setAllQuotes] = useState([]); // Store 100 fetched quotes
+  const [displayedQuotes, setDisplayedQuotes] = useState([]); // Store 6 quotes at a time
+  const [quoteIndex, setQuoteIndex] = useState(0); // Track which quotes are being displayed
+
+
   useEffect(() => {
-    fetchRandomQuotes();
+    setAllQuotes(initialQuotes);
+    setDisplayedQuotes(initialQuotes.slice(0, 6));
+    setQuoteIndex(6);
   }, []);
 
   const fetchRandomQuotes = async () => {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/generate-quotes`,
-        { keyword: "life" }
+        { keyword: "life", number: 6, language }
       );
       if (response.data?.parsedQuotes) {
-        setQuotes(response.data.parsedQuotes);
+        setAllQuotes(response.data.parsedQuotes); // Store 100 quotes
+        setDisplayedQuotes(response.data.parsedQuotes.slice(0, 6)); // Show first 6
+        setQuoteIndex(6); // Track the next batch
       }
     } catch (error) {
       console.error("Error fetching random quotes:", error);
     }
   };
 
+  const fetchQuotes = async (newKeyword) => {
+    try {
+        const response = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/generate-quotes`,
+            { keyword: newKeyword, number: 30, language }
+        );
+
+        if (response.data?.parsedQuotes) {
+            setAllQuotes(response.data.parsedQuotes); // Store 100 quotes
+            setDisplayedQuotes(response.data.parsedQuotes.slice(0, 6)); // Show first 6
+            setQuoteIndex(6); // Track the next batch
+        }
+    } catch (error) {
+        console.error("Error fetching quotes:", error);
+    }
+  };
+
+  const loadMoreQuotes = () => {
+    if (quoteIndex < allQuotes.length) {
+        console.log("more quotes available")
+        // Load the next 6 quotes from stored quotes
+        setDisplayedQuotes(allQuotes.slice(quoteIndex, quoteIndex + 6));
+        setQuoteIndex(quoteIndex + 6);
+    } else {
+      console.log("fetching new quotes")
+        // If all 100 quotes are used, fetch more quotes for the same keyword
+        fetchQuotes(keyword);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (keyword.trim()) {
-      try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/generate-quotes`,
-          { keyword, language }
-        );
-        if (response.data?.parsedQuotes) {
-          setQuotes(response.data.parsedQuotes);
-        }
-      } catch (error) {
-        console.error("Error generating quotes:", error);
-      }
+        // Reset stored quotes & index before fetching new ones
+        setAllQuotes([]);
+        setDisplayedQuotes([]);
+        setQuoteIndex(0);
+
+        // Call fetchQuotes for the new keyword
+        fetchQuotes(keyword);
     }
   };
 
@@ -81,16 +129,24 @@ const App = () => {
         <>
           {/* LARGE SCREEN: Three sections layout */}
           <div className="hidden flex-1 md:grid grid-cols-3 gap-4 w-full max-w-8xl">
+
             {/* Left Section (Quotes) */}
             <div className="flex justify-center flex-col items-end p-6 space-y-8">
-              {quotes.slice(0, 3).map((quote, index) => (
-                <QuoteBox
-                  key={index}
-                  quote={quote}
-                  align={index % 2 === 0 ? "right" : "left"}
-                  onClick={() => handleQuoteClick(quote)}
-                />
-              ))}
+              <AnimatePresence>
+                {allQuotes.length === 0
+                  ?
+                    [...Array(3)].map((_, index) => <QuoteSkeleton key={index} align={index % 2 === 0 ? "right" : "left"}/>)
+                  : 
+                    displayedQuotes.slice(0, 3).map((quote, index) => (
+                      <QuoteBox
+                        key={index}
+                        quote={quote}
+                        align={index % 2 === 0 ? "right" : "left"}
+                        onClick={() => handleQuoteClick(quote)}
+                      />
+                    ))
+                }
+              </AnimatePresence>
             </div>
 
             {/* Center Section (Title, Input, Button) */}
@@ -109,28 +165,52 @@ const App = () => {
                   />
                   <LanguageSelector setLanguage={setLanguage} />
                 </div>
-                <motion.button
-                  type="submit"
-                  className="!bg-yellow-500 hover:!bg-yellow-600 text-gray-900 px-6 py-2 rounded-lg font-bold"
-                  whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  Generate
-                </motion.button>
+                
+                <div className="flex flex-col items-center space-y-4">
+                    {/* Generate Button */}
+                    <motion.button
+                        onClick={handleSubmit}
+                        className="!bg-yellow-500 hover:!bg-yellow-600 text-gray-900 px-6 py-2 rounded-lg font-bold"
+                        whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        Generate Quotes
+                    </motion.button>
+
+                    {/* Show "Load More" Button Only If Quotes Exist */}
+                    {allQuotes.length > numberOfQuotesToDisplay && (
+                        <motion.button
+                            onClick={loadMoreQuotes}
+                            className="!bg-blue-500 hover:!bg-blue-600 text-white px-6 py-2 rounded-lg font-bold"
+                            whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        >
+                            Load More
+                        </motion.button>
+                    )}
+                </div>
               </form>
             </div>
 
             {/* Right Section (Quotes) */}
             <div className="flex flex-col justify-center items-start p-6 space-y-8">
-              {quotes.slice(3, 6).map((quote, index) => (
-                <QuoteBox
-                  key={index}
-                  quote={quote}
-                  align={index % 2 === 0 ? "left" : "right"}
-                  onClick={() => handleQuoteClick(quote)}
-                />
-              ))}
+              <AnimatePresence>
+                {allQuotes.length === 0
+                  ?
+                    [...Array(3)].map((_, index) => <QuoteSkeleton key={index} align={index % 2 === 0 ? "left" : "right"}/>)
+                  :
+                    displayedQuotes.slice(3, 6).map((quote, index) => (
+                      <QuoteBox
+                        key={index}
+                        quote={quote}
+                        align={index % 2 === 0 ? "left" : "right"}
+                        onClick={() => handleQuoteClick(quote)}
+                      />
+                    ))
+                }
+              </AnimatePresence>
             </div>
+
           </div>
 
           {/* SMALL SCREEN: Stacked Layout */}
@@ -150,19 +230,37 @@ const App = () => {
                   />
                   <LanguageSelector setLanguage={setLanguage} />
                 </div>
-                <button
-                  type="submit"
-                  className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-6 py-2 rounded-lg font-bold"
-                >
-                  Generate
-                </button>
+                
+                <div className="flex flex-col items-center space-y-4">
+                    {/* Generate Button */}
+                    <motion.button
+                        onClick={handleSubmit}
+                        className="!bg-yellow-500 hover:!bg-yellow-600 text-gray-900 px-6 py-2 rounded-lg font-bold"
+                        whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        Generate Quotes
+                    </motion.button>
+
+                    {/* Show "Get More Quotes" Button Only If Quotes Exist */}
+                    {allQuotes.length > numberOfQuotesToDisplay && (
+                        <motion.button
+                            onClick={loadMoreQuotes}
+                            className="!bg-blue-500 hover:!bg-blue-600 text-white px-6 py-2 rounded-lg font-bold"
+                            whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        >
+                          Load More
+                        </motion.button>
+                    )}
+                </div>
               </form>
             </div>
 
             {/* Quotes (Stacked) */}
             <div className="flex flex-col items-center space-y-4">
               {quotes.map((quote, index) => (
-                <QuoteBox key={index} quote={quote} onClick={() => setSelectedQuote(quote)} />
+                <QuoteBox key={index} quote={quote} onClick={() => handleQuoteClick(quote)} />
               ))}
             </div>
           </div>
