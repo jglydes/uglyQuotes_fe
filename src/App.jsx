@@ -35,6 +35,7 @@ const App = () => {
 
 
   useEffect(() => {
+    console.log("use effect")
     setAllQuotes(initialQuotes);
     setDisplayedQuotes(initialQuotes.slice(0, 6));
     setQuoteIndex(6);
@@ -57,6 +58,7 @@ const App = () => {
   };
 
   const fetchQuotes = async (newKeyword) => {
+    console.log("fetching quotes")
     try {
         const response = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/generate-quotes`,
@@ -87,6 +89,7 @@ const App = () => {
   };
 
   const handleSubmit = async (e) => {
+    console.log("handle submit")
     e.preventDefault();
 
     if (keyword.trim()) {
@@ -180,6 +183,7 @@ const App = () => {
                     {/* Show "Load More" Button Only If Quotes Exist */}
                     {allQuotes.length > numberOfQuotesToDisplay && (
                         <motion.button
+                            type="button"
                             onClick={loadMoreQuotes}
                             className="!bg-blue-500 hover:!bg-blue-600 text-white px-6 py-2 rounded-lg font-bold"
                             whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
@@ -259,7 +263,7 @@ const App = () => {
 
             {/* Quotes (Stacked) */}
             <div className="flex flex-col items-center space-y-4">
-              {quotes.map((quote, index) => (
+              {allQuotes.map((quote, index) => (
                 <QuoteBox key={index} quote={quote} onClick={() => handleQuoteClick(quote)} />
               ))}
             </div>
@@ -316,23 +320,28 @@ const App = () => {
                     <option value="'Times New Roman', serif">Times New Roman</option>
                   </select>
                 </div>
-
-                {/* Font Color Selection */}
+              
+                {/* Font Color Picker */}
                 <div className="flex items-center space-x-4">
                   <label className="text-gray-700">Font Color</label>
+
+                  {/* Clickable color box */}
                   <div
                     className="w-8 h-8 rounded-full border border-gray-400 cursor-pointer"
                     style={{ backgroundColor: selectedFontColor }}
-                    onClick={() => document.getElementById("fontColorPicker").click()}
+                    onClick={() => document.getElementById("fontColorPicker").click()} // Forces color picker to open
                   ></div>
+
+                  {/* Hidden color input */}
                   <input
                     type="color"
                     id="fontColorPicker"
-                    className="hidden"
-                    value={selectedFontColor}
+                    className="absolute opacity-0 w-0 h-0" // Ensures it's hidden but still works
+                    defaultValue={selectedFontColor}
                     onChange={(e) => setSelectedFontColor(e.target.value)}
                   />
                 </div>
+
 
                 {/* Background Color Selection */}
                 <div className="flex items-center space-x-4">
@@ -345,8 +354,8 @@ const App = () => {
                   <input
                     type="color"
                     id="bgColorPicker"
-                    className="hidden"
-                    value={selectedBgColor}
+                    className="absolute opacity-0 w-0 h-0"
+                    defaultValue={selectedBgColor}
                     onChange={(e) => setSelectedBgColor(e.target.value)}
                   />
                 </div>
