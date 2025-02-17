@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { generateImage } from "./utils/generateImage";
+import axios from "axios";
+
 import QuoteBox from "./components/QuoteBox";
 import Footer from "./components/Footer"
 import LanguageSelector from "./components/LanguageSelector";
 import QuoteSkeleton from "./components/QuoteSkeleton";
-import { motion, AnimatePresence } from "framer-motion";
-import { generateImage } from "./utils/generateImage";
-import axios from "axios";
+import ColorPicker from "./components/ColorPicker";
+
 
 const initialQuotes = [
   "Life is like a roll of toilet paper, sometimes it's just full of crap.",
@@ -155,7 +158,7 @@ const App = () => {
             {/* Center Section (Title, Input, Button) */}
             <div className="flex flex-col items-center justify-center space-y-4 space-x-4 text-center">
           
-              <img src="/uglysize1.png" />
+              <img src="/uglysize2.png" />
 
               <form className="flex flex-col space-y-3 w-full" onSubmit={handleSubmit}>
                 <div className="flex items-center space-x-2">
@@ -170,15 +173,6 @@ const App = () => {
                 </div>
                 
                 <div className="flex flex-col items-center space-y-4">
-                    {/* Generate Button */}
-                    <motion.button
-                        onClick={handleSubmit}
-                        className="!bg-yellow-500 hover:!bg-yellow-600 text-gray-900 px-6 py-2 rounded-lg font-bold"
-                        whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        Generate Quotes
-                    </motion.button>
 
                     {/* Show "Load More" Button Only If Quotes Exist */}
                     {allQuotes.length > numberOfQuotesToDisplay && (
@@ -192,6 +186,18 @@ const App = () => {
                             Load More
                         </motion.button>
                     )}
+                    
+                    {/* Generate Button */}
+                    <motion.button
+                        onClick={handleSubmit}
+                        className="!bg-yellow-500 hover:!bg-yellow-600 text-gray-900 px-6 py-2 rounded-lg font-bold"
+                        whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0] }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        Generate Quotes
+                    </motion.button>
+
+                    
                 </div>
               </form>
             </div>
@@ -221,7 +227,7 @@ const App = () => {
           <div className="md:hidden flex flex-col items-center space-y-6 w-full">
             {/* Title, Input, and Button */}
             <div className="flex flex-col items-center text-center">
-              <img src="/uglysize1.png" />
+              <img src="/uglysize2.png" />
 
               <form className="flex flex-col space-y-3 w-full px-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col items-center space-y-2">
@@ -320,45 +326,11 @@ const App = () => {
                     <option value="'Times New Roman', serif">Times New Roman</option>
                   </select>
                 </div>
-              
-                {/* Font Color Picker */}
-                <div className="flex items-center space-x-4">
-                  <label className="text-gray-700">Font Color</label>
 
-                  {/* Clickable color box */}
-                  <div
-                    className="w-8 h-8 rounded-full border border-gray-400 cursor-pointer"
-                    style={{ backgroundColor: selectedFontColor }}
-                    onClick={() => document.getElementById("fontColorPicker").click()} // Forces color picker to open
-                  ></div>
-
-                  {/* Hidden color input */}
-                  <input
-                    type="color"
-                    id="fontColorPicker"
-                    className="absolute opacity-0 w-0 h-0" // Ensures it's hidden but still works
-                    defaultValue={selectedFontColor}
-                    onChange={(e) => setSelectedFontColor(e.target.value)}
-                  />
-                </div>
-
-
-                {/* Background Color Selection */}
-                <div className="flex items-center space-x-4">
-                  <label className="text-gray-700">Background Color</label>
-                  <div
-                    className="w-8 h-8 rounded-full border border-gray-400 cursor-pointer"
-                    style={{ backgroundColor: selectedBgColor }}
-                    onClick={() => document.getElementById("bgColorPicker").click()}
-                  ></div>
-                  <input
-                    type="color"
-                    id="bgColorPicker"
-                    className="absolute opacity-0 w-0 h-0"
-                    defaultValue={selectedBgColor}
-                    onChange={(e) => setSelectedBgColor(e.target.value)}
-                  />
-                </div>
+                
+                <ColorPicker label="Font Color" selectedColor={selectedFontColor} setSelectedColor={setSelectedFontColor} />
+                <ColorPicker label="Background Color" selectedColor={selectedBgColor} setSelectedColor={setSelectedBgColor} />
+                
               </div>
 
               {/* Generate Image Button */}
